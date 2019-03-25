@@ -10,8 +10,11 @@ use hscstudio\mimin\models\AuthItem;
  * @author Hafid Mukhlasin <hafidmukhlasin@gmail.com>
  * @since 1.0
  */
-Class Mimin extends \yii\base\Object
+Class Mimin extends \yii\base\BaseObject
 {
+
+    private static $_cachePathCheck = [];
+
 	/**
 	 * Method CheckRoute is used for checking if route right to access
 	 *
@@ -27,6 +30,19 @@ Class Mimin extends \yii\base\Object
 	{
 		$user = Yii::$app->user;
 		$permission = (substr($route, 0, 1) == '/') ? $route : '/' . $route;
+		$routePaths = explode('/',$permission);
+		$currentPath = '';
+		foreach ($routePaths as $path){
+            $currentPath = empty($currentPath) ? '/' : $currentPath.$path.'/';
+            if(isset(static::$_cachePathCheck[$currentPath]) && static::$_cachePathCheck[$currentPath]){
+                return true;
+            }
+            $check = $user->can($currentPath) || $user->can($currentPath.'*');
+            static::$_cachePathCheck[$currentPath] = $check;
+            if($check){
+                return true;
+            }
+        }
 		if ($user->can($permission)) {
 			return true;
 		}
